@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   // 'citizen', 'admin', or 'agency'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  complaints Complaint[]
+  responses  ComplaintResponse[]
+}
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  categories  Category[]
+  complaints  Complaint[]
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  agencyId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  agency      Agency    @relation(fields: [agencyId], references: [id])
+  complaints  Complaint[]
+}
+
+model Complaint {
+  id                String   @id @default(uuid())
+  title            String
+  description      String
+  categoryId       String
+  status           String   // 'pending', 'in_progress', 'resolved', 'rejected'
+  userId           String
+  assignedToAgencyId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  location         String?  // JSON string containing address, lat, lng
+
+  // Relations
+  category         Category          @relation(fields: [categoryId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+  agency           Agency?           @relation(fields: [assignedToAgencyId], references: [id])
+  responses        ComplaintResponse[]
+}
+
+model ComplaintResponse {
+  id          String   @id @default(uuid())
+  complaintId String
+  userId      String
+  userRole    String
+  message     String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  complaint   Complaint @relation(fields: [complaintId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
